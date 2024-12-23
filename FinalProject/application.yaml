@@ -1,0 +1,31 @@
+# example values
+
+server:
+  port: 8080
+
+spring:
+  datasource:
+    username: root
+    password: test
+    url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+indexing-settings:
+  sites:
+    - url: https://www.sendel.ru
+      name: Sendel
+    - url: https://deti-nsk.ru/
+      name: Shkola
+
+connection-settings:
+  userAgent: Chrome/4.0.249.0 Safari/532.5
+  referrer: https://www.google.com
+
+limit-on-indexing-page:
+  limit: 2000
