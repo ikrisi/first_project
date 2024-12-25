@@ -2,10 +2,14 @@ package searchengine.services.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import searchengine.config.JsoupConnection;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
+import searchengine.dto.BadResponse;
+import searchengine.dto.OkResponse;
 import searchengine.model.StatusType;
 import searchengine.model.WebSite;
 import searchengine.repositories.IndexesRepository;
@@ -19,9 +23,7 @@ import searchengine.services.utils.HTMLParser;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
@@ -34,17 +36,30 @@ public class IndexingServiceImpl implements IndexingService {
     private final PageRepository pageRepository;
     private final JsoupConnection jsoupConnection;
     private AtomicBoolean indexingStatus;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final IndexesRepository indexesRepository;
     private final LemmaRepository lemmaRepository;
     public static int countStart = 0;
 
-    public void startIndexing(AtomicBoolean indexingStatus) throws InterruptedException {
+    public ResponseEntity startIndexing(AtomicBoolean indexingStatus) throws InterruptedException {
         this.indexingStatus = indexingStatus;
-        clearDB();
-        List<WebSite> webSites = getListSitesForAddToDB();
-        indexing(webSites);
-        indexingStatus.set(false);
-        countStart++;
+        if (!indexingStatus.get()) {
+            executor.submit( () -> {
+                        indexingStatus.set(true);
+                        try {
+                            clearDB();
+                            List<WebSite> webSites = getListSitesForAddToDB();
+                            indexing(webSites);
+                            indexingStatus.set(false);
+                            countStart++;
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+            );
+            return ResponseEntity.status(HttpStatus.OK).body(new OkResponse());
+        }
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new BadResponse(false, "Индексация уже запущена"));
     }
 
     public List<WebSite> getListSitesForAddToDB() {
@@ -104,6 +119,14 @@ public class IndexingServiceImpl implements IndexingService {
             webSite.setStatus(StatusType.FAILED);
             siteRepository.save(webSite);
         }
+    }
+
+    public ResponseEntity stopIndexing() {
+        if (!indexingStatus.get()) {
+            return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(new BadResponse(false, "Индексация не запущена"));
+        }
+        indexingStatus.set(false);
+        return ResponseEntity.status(HttpStatus.OK).body(new OkResponse());
     }
 
     public void clearDB() {

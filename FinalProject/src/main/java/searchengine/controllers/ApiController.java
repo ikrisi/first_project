@@ -1,5 +1,6 @@
 package searchengine.controllers;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,25 +21,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api")
 public class ApiController {
 
     private final StatisticsService statisticsService;
     private final IndexingService indexingService;
     private AtomicBoolean indexingStatus = new AtomicBoolean(false);
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final SitesList sitesList;
     private final PageIndexingService pageIndexingService;
     private final SearchService searchService;
-
-    public ApiController(StatisticsService statisticsService, IndexingService indexingService, SitesList sitesList,
-                         PageIndexingService pageIndexingService, SearchService searchService) {
-        this.statisticsService = statisticsService;
-        this.indexingService = indexingService;
-        this.sitesList = sitesList;
-        this.pageIndexingService = pageIndexingService;
-        this.searchService = searchService;
-    }
 
     @GetMapping("/statistics")
     public ResponseEntity<StatisticsResponse> statistics() {
@@ -47,29 +39,12 @@ public class ApiController {
 
     @GetMapping("/startIndexing")
     public ResponseEntity startIndexing() throws InterruptedException{
-        if (!indexingStatus.get()) {
-            executor.submit( () -> {
-                        indexingStatus.set(true);
-                        try {
-                            indexingService.startIndexing(indexingStatus);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-            );
-            return ResponseEntity.status(HttpStatus.OK).body(new OkResponse());
-        }
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new BadResponse(false, "Индексация уже запущена"));
-
+        return indexingService.startIndexing(indexingStatus);
     }
 
     @GetMapping("/stopIndexing")
     public ResponseEntity stopIndexing() {
-        if (!indexingStatus.get()) {
-            return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(new BadResponse(false, "Индексация не запущена"));
-        }
-        indexingStatus.set(false);
-        return ResponseEntity.status(HttpStatus.OK).body(new OkResponse());
+       return indexingService.stopIndexing();
     }
 
     @PostMapping("/indexPage")

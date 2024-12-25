@@ -13,6 +13,6 @@ import java.util.List;
 @NoArgsConstructor
 public class SearchResponse {
     private Boolean result;
-    private int count;
+    private Integer count;
     private List<SearchData> data;
 }
