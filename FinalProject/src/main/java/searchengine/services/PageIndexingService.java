@@ -2,6 +2,7 @@ package searchengine.services;
 
 import org.springframework.http.ResponseEntity;
 import searchengine.config.Site;
+import searchengine.dto.IndexingResponse;
 
 import java.io.IOException;
 

@@ -1,11 +1,12 @@
 package searchengine.services;
 
 import org.springframework.http.ResponseEntity;
+import searchengine.dto.IndexingResponse;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public interface IndexingService {
-    ResponseEntity startIndexing(AtomicBoolean isIndexing) throws InterruptedException;
+    void startIndexing(AtomicBoolean isIndexing) throws InterruptedException;
 
-    ResponseEntity stopIndexing();
+    //ResponseEntity stopIndexing();
 }

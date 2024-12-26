@@ -42,7 +42,7 @@ public class SearchServiceImpl implements SearchService {
     private final SitesList sitesList;
 
     @Override
-    public ResponseEntity<Object> search(String query, String site, int offset, int limit) {
+    public ResponseEntity search(String query, String site, int offset, int limit) {
         clearLists();
         flagAllSitesForSearch = 0;
         ResponseEntity<Object> responseEntity = checkInputSiteAndQuery(query, site);
